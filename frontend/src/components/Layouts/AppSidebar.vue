@@ -143,7 +143,8 @@
       :afterSkipAll="() => capture('onboarding_steps_skipped')"
       :afterReset="(step) => capture('onboarding_step_reset_' + step)"
       :afterResetAll="() => capture('onboarding_steps_reset')"
-      docsLink="https://docs.frappe.io/crm"
+      title="EASICloud CRM"
+      docsLink="https://crm.easicloud.ca/help"
     />
     <IntermediateStepModal
       v-model="showIntermediateModal"
