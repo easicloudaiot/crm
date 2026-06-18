@@ -424,6 +424,21 @@ const tabs = computed(() => {
       icon: CommentIcon,
     },
     {
+      name: 'Data',
+      label: __('Data'),
+      icon: DetailsIcon,
+    },
+    {
+      name: 'Events',
+      label: __('Events'),
+      icon: EventIcon,
+    },
+    {
+      name: 'Calls',
+      label: __('Calls'),
+      icon: PhoneIcon,
+    },
+    {
       name: 'Tasks',
       label: __('Tasks'),
       icon: TaskIcon,
@@ -432,21 +447,6 @@ const tabs = computed(() => {
       name: 'Notes',
       label: __('Notes'),
       icon: NoteIcon,
-    },
-    {
-      name: 'Data',
-      label: __('Data'),
-      icon: DetailsIcon,
-    },
-    {
-      name: 'Calls',
-      label: __('Calls'),
-      icon: PhoneIcon,
-    },
-    {
-      name: 'Events',
-      label: __('Events'),
-      icon: EventIcon,
     },
     {
       name: 'Attachments',
