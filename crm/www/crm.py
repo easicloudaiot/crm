@@ -12,10 +12,6 @@ no_cache = 1
 
 
 def get_context():
-	if frappe.session.user == "Guest":
-		frappe.local.response["type"] = "redirect"
-		frappe.local.response["location"] = "/login?redirect-to=%2Fcrm"
-		raise frappe.Redirect
 	from crm.api import check_app_permission
 
 	if not check_app_permission():
