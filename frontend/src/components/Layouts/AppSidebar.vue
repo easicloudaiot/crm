@@ -86,7 +86,7 @@
           :afterUpgrade="() => capture('upgrade_plan_from_trial_banner')"
         />
         <GettingStartedBanner
-          v-if="!isOnboardingStepsCompleted"
+          v-if="showOnboarding && !isOnboardingStepsCompleted"
           :isSidebarCollapsed="isSidebarCollapsed"
         />
       </div>
@@ -102,7 +102,7 @@
         </template>
       </SidebarLink>
       <SidebarLink
-        v-if="isOnboardingStepsCompleted"
+        v-if="showOnboarding && isOnboardingStepsCompleted"
         :label="__('Help')"
         :isCollapsed="isSidebarCollapsed"
         @click="
@@ -135,7 +135,7 @@
     <Notifications />
     <Settings />
     <HelpModal
-      v-if="showHelpModal"
+      v-if="showOnboarding && showHelpModal"
       v-model="showHelpModal"
       v-model:articles="articles"
       :logo="CRMLogo"
@@ -340,6 +340,8 @@ function getIcon(routeName, icon) {
 const { user } = sessionStore()
 const { users, isManager } = usersStore()
 const { isOnboardingStepsCompleted, setUp } = useOnboarding('frappecrm')
+// EASICloud: onboarding/Getting-Started disabled (contextual help to come later)
+const showOnboarding = false
 
 async function getFirstLead() {
   let firstLead = localStorage.getItem('firstLead' + user)
