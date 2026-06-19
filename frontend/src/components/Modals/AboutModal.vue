@@ -4,8 +4,12 @@
       <div class="p-4 pt-5">
         <div class="flex justify-center">
           <div class="flex flex-col items-center">
-            <CRMLogo class="mb-3 size-12" />
-            <h3 class="font-semibold text-xl text-ink-gray-9">EASICloud CRM</h3>
+            <img v-if="about.logo" :src="about.logo" class="mb-3 size-12 object-contain" alt="logo" />
+            <h3 class="font-semibold text-xl text-ink-gray-9">{{ about.product || 'CRM' }}</h3>
+            <p v-if="about.version" class="text-sm text-ink-gray-6 mt-1">{{ about.version }}</p>
+            <p v-if="about.platform" class="text-xs text-ink-gray-5 mt-0.5">
+              {{ __('Platform') }} {{ about.platform }}<template v-if="about.build"> · {{ about.build }}</template>
+            </p>
           </div>
         </div>
         <hr class="border-t my-3 mx-2" />
@@ -22,49 +26,48 @@
               v-if="link.icon"
               class="size-4 mr-2 text-ink-gray-7"
             />
-            <span class="text-base text-ink-gray-8">
-              {{ link.label }}
-            </span>
+            <span class="text-base text-ink-gray-8">{{ link.label }}</span>
           </a>
         </div>
         <hr class="border-t my-3 mx-2" />
-        <p class="text-sm text-ink-gray-6 px-2 mt-2">
-          © 2026 EASICloud Corp. Powered by Frappe CRM.
+        <p v-if="about.copyright" class="text-sm text-ink-gray-6 px-2 mt-2">
+          {{ about.copyright }}
         </p>
       </div>
     </template>
   </Dialog>
 </template>
+
 <script setup>
-import CRMLogo from '@/components/Icons/CRMLogo.vue'
+// About content + version come from the private easicloud_crm app (easicloud_crm.api.get_about);
+// no EASICloud link details or platform info live in this (public fork) file.
 import LucideGlobe from '~icons/lucide/globe'
-import LucideGitHub from '~icons/lucide/github'
 import LucideHeadset from '~icons/lucide/headset'
-import LucideBug from '~icons/lucide/bug'
 import LucideBookOpen from '~icons/lucide/book-open'
+import { call } from 'frappe-ui'
+import { ref, computed, watch } from 'vue'
 
 let show = defineModel({ type: Boolean })
+const about = ref({})
 
-let links = [
-  {
-    label: __('Website'),
-    url: 'https://easicloud.ca',
-    icon: LucideGlobe,
-  },
-  {
-    label: __('Documentation'),
-    url: 'https://crm.easicloud.ca/help',
-    icon: LucideBookOpen,
-  },
-  {
-    label: __('Report an Issue'),
-    url: 'mailto:crm-support@easicloud.ca',
-    icon: LucideBug,
-  },
-  {
-    label: __('Contact Support'),
-    url: 'mailto:crm-support@easicloud.ca',
-    icon: LucideHeadset,
-  },
-]
+async function loadAbout() {
+  if (Object.keys(about.value).length) return
+  try {
+    about.value = await call('easicloud_crm.api.get_about')
+  } catch (e) {
+    about.value = {}
+  }
+}
+
+watch(show, (visible) => { if (visible) loadAbout() }, { immediate: true })
+
+const links = computed(() => {
+  const a = about.value
+  const out = []
+  if (a.website) out.push({ label: __('Website'), url: a.website, icon: LucideGlobe })
+  if (a.docs_url) out.push({ label: __('Documentation'), url: a.docs_url, icon: LucideBookOpen })
+  if (a.support_email)
+    out.push({ label: __('Contact Support'), url: 'mailto:' + a.support_email, icon: LucideHeadset })
+  return out
+})
 </script>
