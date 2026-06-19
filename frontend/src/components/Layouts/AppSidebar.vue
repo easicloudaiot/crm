@@ -218,7 +218,8 @@ const isSidebarCollapsed = useStorage('isSidebarCollapsed', false)
 
 const isFCSite = ref(window.is_fc_site)
 const isDemoSite = ref(window.is_demo_site)
-const showSalesHierarchyBanner = ref(!!window.show_sales_hierarchy_banner)
+// EASICloud: hide Frappe permissions-update banner (Learn more links to frappe.io blog)
+const showSalesHierarchyBanner = ref(false)
 
 const links = [
   {
