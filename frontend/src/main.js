@@ -7,7 +7,7 @@ import { initSocket } from './socket'
 import router from './router'
 import translationPlugin from './translation'
 import App from './App.vue'
-import { showChangePasswordModal } from '@/composables/modals'
+import { showWelcomeWizard } from '@/composables/modals'
 
 import {
   FrappeUI,
@@ -59,7 +59,7 @@ app.config.globalProperties.$dialog = createDialog
 // is single-use, so prompt them to set a password right away (router drops the
 // query on its '/' redirect, so read it from the URL before mount, then strip it).
 if (new URLSearchParams(window.location.search).has('setup-password')) {
-  showChangePasswordModal.value = true
+  showWelcomeWizard.value = true
   const _u = new URL(window.location.href)
   _u.searchParams.delete('setup-password')
   window.history.replaceState({}, '', _u)

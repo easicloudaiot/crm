@@ -214,3 +214,30 @@ def set_initial_password(new_password: str):
 
 	update_password(user=user, pwd=new_password, logout_all_sessions=False)
 	return _("Password set successfully")
+
+
+@frappe.whitelist()
+def set_initial_profile(
+	first_name: str,
+	last_name: str | None = None,
+	mobile_no: str | None = None,
+	job_title: str | None = None,
+):
+	"""Let an onboarding user fill in their own profile (name/title/phone).
+
+	Scoped to the logged-in user. job_title is written to the optional
+	crm_job_title custom field if the deployment has it (Pulse adds it).
+	"""
+	user = frappe.session.user
+	if user == "Guest":
+		frappe.throw(_("You must be logged in to update your profile"), frappe.AuthenticationError)
+	doc = frappe.get_doc("User", user)
+	if first_name:
+		doc.first_name = first_name.strip()
+	doc.last_name = (last_name or "").strip()
+	if mobile_no is not None:
+		doc.mobile_no = mobile_no.strip()
+	if job_title is not None and doc.meta.has_field("crm_job_title"):
+		doc.crm_job_title = job_title.strip()
+	doc.save(ignore_permissions=True)
+	return _("Profile saved")
