@@ -162,6 +162,7 @@ import {
   toast,
   Tooltip,
   createDocumentResource,
+  useOnboarding,
 } from 'frappe-ui'
 import { ref, computed, inject } from 'vue'
 
@@ -169,6 +170,7 @@ const emit = defineEmits(['updateStep'])
 
 const { user: sessionUser } = inject('session')
 const user = createDocumentResource({ doctype: 'User', name: sessionUser })
+const { updateOnboardingStep } = useOnboarding('frappecrm')
 
 const showChangePasswordModal = ref(false)
 const phoneValid = ref(true)
@@ -206,6 +208,10 @@ function save() {
   user.save.submit(null, {
     onSuccess: () => {
       toast.success(__('Profile Updated Successfully'))
+      const d = user.doc
+      if (d.first_name && d.last_name && d.crm_job_title && d.mobile_no) {
+        updateOnboardingStep('complete_your_profile')
+      }
     },
     onError: (err) => {
       toast.error(err.message + ': ' + err.messages[0])

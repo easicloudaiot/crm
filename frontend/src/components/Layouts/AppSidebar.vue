@@ -341,7 +341,8 @@ function getIcon(routeName, icon) {
 // onboarding
 const { user } = sessionStore()
 const { users, isManager } = usersStore()
-const { isOnboardingStepsCompleted, setUp } = useOnboarding('frappecrm')
+const { isOnboardingStepsCompleted, setUp, updateOnboardingStep } =
+  useOnboarding('frappecrm')
 // Gate the Getting Started / Help panel on a CRM-specific onboarding flag,
 // served to the SPA via sysdefaults (the crm_enable_onboarding global default).
 // Deliberately separate from System Settings.enable_onboarding, which drives the
@@ -373,6 +374,18 @@ const steps = reactive([
       minimize.value = true
       showChangePasswordModal.value = true
       capture('onboarding_step_clicked_setup_password')
+    },
+  },
+  {
+    name: 'complete_your_profile',
+    title: __('Complete your profile'),
+    icon: markRaw(ContactsIcon),
+    completed: false,
+    onClick: () => {
+      minimize.value = true
+      showSettings.value = true
+      activeSettingsPage.value = 'Profile'
+      capture('onboarding_step_clicked_complete_profile')
     },
   },
   {
@@ -560,6 +573,12 @@ onMounted(async () => {
   })
 
   setUp(filteredSteps)
+
+  // auto-complete "Complete your profile" once the signature fields are filled
+  if (onboardingEnabled && !isOnboardingStepsCompleted.value) {
+    const complete = await call('crm.api.user.profile_complete')
+    if (complete) updateOnboardingStep('complete_your_profile')
+  }
 })
 
 // help center

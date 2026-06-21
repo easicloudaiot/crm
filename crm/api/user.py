@@ -243,3 +243,16 @@ def set_initial_profile(
 		doc.crm_job_title = job_title.strip()
 	doc.save(ignore_permissions=True)
 	return _("Profile saved")
+
+
+@frappe.whitelist()
+def profile_complete():
+	"""Whether the logged-in user has filled the signature-relevant profile
+	fields: first name, last name, job title and phone. Middle name is
+	optional. Drives the "Complete your profile" onboarding step."""
+	user = frappe.session.user
+	if user == "Guest":
+		return False
+	doc = frappe.get_doc("User", user)
+	job_title = doc.get("crm_job_title") if doc.meta.has_field("crm_job_title") else None
+	return bool(doc.first_name and doc.last_name and job_title and doc.mobile_no)
