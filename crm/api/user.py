@@ -174,3 +174,43 @@ def update_module_in_user(user, module):
 
 	if block_modules:
 		user.set("block_modules", block_modules)
+
+
+@frappe.whitelist()
+def has_password():
+	"""True if the current user has a login password set."""
+	return _user_has_password(frappe.session.user)
+
+
+def _user_has_password(user):
+	if user in ("Guest", ""):
+		return False
+	return bool(
+		frappe.db.sql(
+			"select name from `__Auth` where doctype='User' and name=%s and fieldname='password' limit 1",
+			user,
+		)
+	)
+
+
+@frappe.whitelist()
+@rate_limit(limit=5, seconds=300)
+def set_initial_password(new_password: str):
+	"""Set a password for a user who has none yet (e.g. just accepted an
+	invitation). No old-password check; rejects if a password already exists."""
+	user = frappe.session.user
+	if user == "Guest":
+		frappe.throw(_("You must be logged in to set your password"), frappe.AuthenticationError)
+	if _user_has_password(user):
+		frappe.throw(_("You already have a password. Use Change Password instead."))
+
+	from frappe.core.doctype.user.user import test_password_strength
+
+	result = test_password_strength(new_password)
+	feedback = result.get("feedback", {})
+	if not feedback.get("password_policy_validation_passed", False):
+		suggestions = feedback.get("suggestions", [])
+		frappe.throw(_("Password is too weak. {0}").format(" ".join(suggestions) if suggestions else ""))
+
+	update_password(user=user, pwd=new_password, logout_all_sessions=False)
+	return _("Password set successfully")

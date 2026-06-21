@@ -1,8 +1,11 @@
 <template>
-  <Dialog v-model="show" :options="{ title: __('Change Password') }">
+  <Dialog
+    v-model="show"
+    :options="{ title: hasPassword ? __('Change Password') : __('Set Password') }"
+  >
     <template #body-content>
       <div class="flex flex-col gap-4">
-        <div>
+        <div v-if="hasPassword">
           <Password
             v-model="currentPassword"
             :placeholder="__('Current Password')"
@@ -55,16 +58,16 @@
 
         <Button
           variant="solid"
-          :label="__('Update')"
+          :label="hasPassword ? __('Update') : __('Set Password')"
           :disabled="
-            !currentPassword ||
+            (hasPassword && !currentPassword) ||
             !newPassword ||
             !confirmPassword ||
             newPassword !== confirmPassword ||
             !isStrongPassword(newPassword)
           "
-          :loading="updatePassword.loading"
-          @click="updatePassword.submit()"
+          :loading="changePassword.loading || setPassword.loading"
+          @click="submit()"
         />
       </div>
     </template>
@@ -80,32 +83,61 @@ const show = defineModel({ type: Boolean })
 
 const { updateOnboardingStep } = useOnboarding('frappecrm')
 
+// Newly-invited users have no password yet -> "Set" mode (no current password).
+const hasPassword = ref(true)
 const currentPassword = ref('')
 const newPassword = ref('')
 const confirmPassword = ref('')
 const confirmPasswordMessage = ref('')
 
-const updatePassword = createResource({
-  url: 'crm.api.user.change_password',
-  makeParams() {
-    return {
-      old_password: currentPassword.value,
-      new_password: newPassword.value,
-    }
-  },
-  onSuccess: () => {
-    updateOnboardingStep('setup_your_password')
-    toast.success(__('Password updated successfully'))
-    show.value = false
-    currentPassword.value = ''
-    newPassword.value = ''
-    confirmPassword.value = ''
-    confirmPasswordMessage.value = ''
-  },
-  onError: (err) => {
-    toast.error(err.messages?.[0] || __('Failed to update password'))
+const hasPasswordResource = createResource({
+  url: 'crm.api.user.has_password',
+  auto: false,
+  onSuccess: (val) => {
+    hasPassword.value = !!val
   },
 })
+
+watch(show, (visible) => {
+  if (visible) hasPasswordResource.fetch()
+})
+
+function onPasswordSet() {
+  updateOnboardingStep('setup_your_password')
+  toast.success(__('Password updated successfully'))
+  show.value = false
+  currentPassword.value = ''
+  newPassword.value = ''
+  confirmPassword.value = ''
+  confirmPasswordMessage.value = ''
+}
+
+function onPasswordError(err) {
+  toast.error(err.messages?.[0] || __('Failed to update password'))
+}
+
+const changePassword = createResource({
+  url: 'crm.api.user.change_password',
+  makeParams() {
+    return { old_password: currentPassword.value, new_password: newPassword.value }
+  },
+  onSuccess: onPasswordSet,
+  onError: onPasswordError,
+})
+
+const setPassword = createResource({
+  url: 'crm.api.user.set_initial_password',
+  makeParams() {
+    return { new_password: newPassword.value }
+  },
+  onSuccess: onPasswordSet,
+  onError: onPasswordError,
+})
+
+function submit() {
+  if (hasPassword.value) changePassword.submit()
+  else setPassword.submit()
+}
 
 function isStrongPassword(password) {
   const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s]).{8,}$/
@@ -116,6 +148,7 @@ watch([currentPassword, newPassword, confirmPassword], () => {
   confirmPasswordMessage.value = ''
 
   if (
+    hasPassword.value &&
     currentPassword.value &&
     newPassword.value &&
     currentPassword.value === newPassword.value
