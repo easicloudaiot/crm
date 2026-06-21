@@ -82,6 +82,24 @@
           </template>
         </FileUploader>
       </div>
+      <!-- Details: Job Title + Phone (also captured by the onboarding wizard) -->
+      <div class="flex flex-col gap-4 pb-8">
+        <div class="grid grid-cols-2 gap-3">
+          <FormControl
+            v-model="user.doc.crm_job_title"
+            :label="__('Job Title')"
+            :placeholder="__('e.g. Account Executive')"
+          />
+          <FormControl
+            v-model="user.doc.mobile_no"
+            :label="__('Phone')"
+            :placeholder="__('e.g. +1 555 123 4567')"
+          />
+        </div>
+        <div v-if="isDirty">
+          <Button variant="solid" :label="__('Save')" @click="save" />
+        </div>
+      </div>
       <div>
         <div class="text-base font-semibold text-ink-gray-9">
           {{ __('Account Info & Security') }}
