@@ -86,7 +86,7 @@
           :afterUpgrade="() => capture('upgrade_plan_from_trial_banner')"
         />
         <GettingStartedBanner
-          v-if="!isOnboardingStepsCompleted"
+          v-if="onboardingEnabled && !isOnboardingStepsCompleted"
           :isSidebarCollapsed="isSidebarCollapsed"
         />
       </div>
@@ -102,7 +102,7 @@
         </template>
       </SidebarLink>
       <SidebarLink
-        v-if="isOnboardingStepsCompleted"
+        v-if="onboardingEnabled && isOnboardingStepsCompleted"
         :label="__('Help')"
         :isCollapsed="isSidebarCollapsed"
         @click="
@@ -135,7 +135,7 @@
     <Notifications />
     <Settings />
     <HelpModal
-      v-if="showHelpModal"
+      v-if="onboardingEnabled && showHelpModal"
       v-model="showHelpModal"
       v-model:articles="articles"
       :logo="CRMLogo"
@@ -342,6 +342,10 @@ function getIcon(routeName, icon) {
 const { user } = sessionStore()
 const { users, isManager } = usersStore()
 const { isOnboardingStepsCompleted, setUp } = useOnboarding('frappecrm')
+// Pulse: gate the Getting Started / Help panel on the Enable Onboarding toggle
+// (Custom Branding -> System Settings.enable_onboarding, read via sysdefaults).
+// Forward-compatible if Frappe later wires CRM to honor this flag natively.
+const onboardingEnabled = Number(window.sysdefaults?.enable_onboarding) === 1
 
 async function getFirstLead() {
   let firstLead = localStorage.getItem('firstLead' + user)
