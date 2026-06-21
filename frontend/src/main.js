@@ -7,6 +7,7 @@ import { initSocket } from './socket'
 import router from './router'
 import translationPlugin from './translation'
 import App from './App.vue'
+import { showChangePasswordModal } from '@/composables/modals'
 
 import {
   FrappeUI,
@@ -53,6 +54,16 @@ for (let key in globalComponents) {
 app.use(telemetryPlugin, { app_name: 'crm' })
 
 app.config.globalProperties.$dialog = createDialog
+
+// Invited users land here from the accept link with ?setup-password=1. The link
+// is single-use, so prompt them to set a password right away (router drops the
+// query on its '/' redirect, so read it from the URL before mount, then strip it).
+if (new URLSearchParams(window.location.search).has('setup-password')) {
+  showChangePasswordModal.value = true
+  const _u = new URL(window.location.href)
+  _u.searchParams.delete('setup-password')
+  window.history.replaceState({}, '', _u)
+}
 
 let socket
 if (import.meta.env.DEV) {
