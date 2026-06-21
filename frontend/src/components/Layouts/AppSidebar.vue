@@ -342,10 +342,11 @@ function getIcon(routeName, icon) {
 const { user } = sessionStore()
 const { users, isManager } = usersStore()
 const { isOnboardingStepsCompleted, setUp } = useOnboarding('frappecrm')
-// Pulse: gate the Getting Started / Help panel on the Enable Onboarding toggle
-// (Custom Branding -> System Settings.enable_onboarding, read via sysdefaults).
-// Forward-compatible if Frappe later wires CRM to honor this flag natively.
-const onboardingEnabled = Number(window.sysdefaults?.enable_onboarding) === 1
+// Gate the Getting Started / Help panel on a CRM-specific onboarding flag,
+// served to the SPA via sysdefaults (the crm_enable_onboarding global default).
+// Deliberately separate from System Settings.enable_onboarding, which drives the
+// Desk module onboarding -- the two must not be coupled.
+const onboardingEnabled = Number(window.sysdefaults?.crm_enable_onboarding) === 1
 
 async function getFirstLead() {
   let firstLead = localStorage.getItem('firstLead' + user)
