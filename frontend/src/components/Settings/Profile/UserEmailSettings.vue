@@ -28,13 +28,21 @@
     </template>
     <template #content>
       <div class="flex flex-col gap-4">
-        <div class="flex flex-col gap-1">
-          <span class="text-base font-medium text-ink-gray-8">
-            {{ __('Signature') }}
-          </span>
-          <span class="text-p-sm text-ink-gray-6">
-            {{ __('Manage your email signature') }}
-          </span>
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex flex-col gap-1">
+            <span class="text-base font-medium text-ink-gray-8">
+              {{ __('Signature') }}
+            </span>
+            <span class="text-p-sm text-ink-gray-6">
+              {{ __('Manage your email signature') }}
+            </span>
+          </div>
+          <Button
+            variant="subtle"
+            :label="__('Reset to default')"
+            :loading="user.save.loading"
+            @click="resetSignature"
+          />
         </div>
         <TextEditor
           editor-class="prose-sm min-h-28 max-w-full border rounded-b-lg border-t-0 p-2 border-outline-gray-modals"
@@ -179,6 +187,16 @@ function update() {
   user.save.submit(null, {
     onSuccess: () => {
       toast.success(__('Email settings updated successfully'))
+    },
+  })
+}
+
+function resetSignature() {
+  user.doc.signature_is_default = 1
+  user.save.submit(null, {
+    onSuccess: () => {
+      toast.success(__('Signature reset to the default'))
+      window.location.reload()
     },
   })
 }
