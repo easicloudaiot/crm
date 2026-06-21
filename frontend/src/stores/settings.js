@@ -19,6 +19,7 @@ export function getSettings() {
     brand.name = settings.value?.brand_name
     brand.logo = settings.value?.brand_logo
     brand.favicon = settings.value?.favicon
+    brand.docsUrl = settings.value?.brand_docs_url || settings.value?.brand_website || ''
   }
 
   return {

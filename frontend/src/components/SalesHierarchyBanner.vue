@@ -17,7 +17,7 @@
       </button>
     </div>
     <div class="text-ink-gray-7 text-p-sm">
-      {{ __('We are changing how permissions work in EASICloud CRM') }}
+      {{ __('We are changing how permissions work in {0}', [brand.name || 'CRM']) }}
     </div>
     <Button :label="__('Learn more')" @click="openBlog">
       <template #suffix>
@@ -31,6 +31,8 @@
 </template>
 
 <script setup>
+import { getSettings } from '@/stores/settings'
+const { brand } = getSettings()
 import { Button, FeatherIcon } from 'frappe-ui'
 import { useStorage } from '@vueuse/core'
 import { computed } from 'vue'

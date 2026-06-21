@@ -10,7 +10,8 @@
       <p class="text-ink-gray-4 text-p-base">
         {{
           __(
-            'You do not have enough permissions to access EASICloud CRM. Please contact your administrator if you believe this is an error.',
+            'You do not have enough permissions to access {0}. Please contact your administrator if you believe this is an error.',
+            [brand.name || 'CRM'],
           )
         }}
       </p>
@@ -25,6 +26,8 @@
   </div>
 </template>
 <script setup>
+import { getSettings } from '@/stores/settings'
+const { brand } = getSettings()
 import { sessionStore } from '@/stores/session'
 const { logout } = sessionStore()
 </script>

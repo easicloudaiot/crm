@@ -86,7 +86,7 @@
           :afterUpgrade="() => capture('upgrade_plan_from_trial_banner')"
         />
         <GettingStartedBanner
-          v-if="showOnboarding && !isOnboardingStepsCompleted"
+          v-if="!isOnboardingStepsCompleted"
           :isSidebarCollapsed="isSidebarCollapsed"
         />
       </div>
@@ -102,7 +102,7 @@
         </template>
       </SidebarLink>
       <SidebarLink
-        v-if="showOnboarding && isOnboardingStepsCompleted"
+        v-if="isOnboardingStepsCompleted"
         :label="__('Help')"
         :isCollapsed="isSidebarCollapsed"
         @click="
@@ -135,7 +135,7 @@
     <Notifications />
     <Settings />
     <HelpModal
-      v-if="showOnboarding && showHelpModal"
+      v-if="showHelpModal"
       v-model="showHelpModal"
       v-model:articles="articles"
       :logo="CRMLogo"
@@ -143,8 +143,8 @@
       :afterSkipAll="() => capture('onboarding_steps_skipped')"
       :afterReset="(step) => capture('onboarding_step_reset_' + step)"
       :afterResetAll="() => capture('onboarding_steps_reset')"
-      title="EASICloud CRM"
-      docsLink="https://crm.easicloud.ca/help"
+      :title="brand.name || 'CRM'"
+      :docsLink="brand.docsUrl"
     />
     <IntermediateStepModal
       v-model="showIntermediateModal"
@@ -154,6 +154,8 @@
 </template>
 
 <script setup>
+import { getSettings } from '@/stores/settings'
+const { brand } = getSettings()
 import BrushCleaningIcon from '~icons/lucide/brush-cleaning'
 import LucideLayoutDashboard from '~icons/lucide/layout-dashboard'
 import CRMLogo from '@/components/Icons/CRMLogo.vue'
@@ -218,7 +220,7 @@ const isSidebarCollapsed = useStorage('isSidebarCollapsed', false)
 
 const isFCSite = ref(window.is_fc_site)
 const isDemoSite = ref(window.is_demo_site)
-// EASICloud: hide Frappe permissions-update banner (Learn more links to frappe.io blog)
+// Hide the upstream Frappe permissions-update banner (Learn-more links to frappe.io)
 const showSalesHierarchyBanner = ref(false)
 
 const links = [
@@ -340,8 +342,6 @@ function getIcon(routeName, icon) {
 const { user } = sessionStore()
 const { users, isManager } = usersStore()
 const { isOnboardingStepsCompleted, setUp } = useOnboarding('frappecrm')
-// EASICloud: onboarding/Getting-Started disabled (contextual help to come later)
-const showOnboarding = false
 
 async function getFirstLead() {
   let firstLead = localStorage.getItem('firstLead' + user)
@@ -639,7 +639,7 @@ const articles = ref([
     ],
   },
   {
-    title: __('EASICloud CRM mobile'),
+    title: __('{0} mobile', [brand.name || 'CRM']),
     opened: false,
     subArticles: [
       { name: 'mobile-app-installation', title: __('Mobile App Installation') },
