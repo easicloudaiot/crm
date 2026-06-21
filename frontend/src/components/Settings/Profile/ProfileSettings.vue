@@ -49,29 +49,11 @@
               </div>
               <div class="flex flex-col gap-1">
                 <div class="flex flex-col gap-1">
-                  <div v-if="!editName" class="flex items-center gap-1">
-                    <span
-                      class="text-lg sm:text-xl !font-semibold text-ink-gray-8"
-                    >
-                      {{ fullName }}
-                    </span>
-                    <Button
-                      class="!px-1 !h-5"
-                      variant="ghost"
-                      @click="editFullName"
-                    >
-                      <EditIcon class="size-3.5" />
-                    </Button>
-                  </div>
-                  <div v-else class="flex items-center gap-1">
-                    <TextInput
-                      ref="fullNameRef"
-                      v-model="fullName"
-                      @keydown.enter="save"
-                      @keydown.esc.stop="editName = false"
-                    />
-                    <Button variant="outline" icon="check" @click="save" />
-                  </div>
+                  <span
+                    class="text-lg sm:text-xl !font-semibold text-ink-gray-8"
+                  >
+                    {{ fullName || __('Complete your profile below') }}
+                  </span>
                   <span class="text-p-sm text-ink-gray-6">
                     {{ user.doc.email }}
                   </span>
@@ -82,8 +64,25 @@
           </template>
         </FileUploader>
       </div>
-      <!-- Details: Job Title + Phone (also captured by the onboarding wizard) -->
+      <!-- Details: name parts + job title + phone. Email above stays read-only. -->
       <div class="flex flex-col gap-4 pb-8">
+        <div class="grid grid-cols-3 gap-3">
+          <FormControl
+            v-model="user.doc.first_name"
+            :label="__('First Name')"
+            :placeholder="__('First Name')"
+          />
+          <FormControl
+            v-model="user.doc.middle_name"
+            :label="__('Middle Name')"
+            :placeholder="__('Middle Name')"
+          />
+          <FormControl
+            v-model="user.doc.last_name"
+            :label="__('Last Name')"
+            :placeholder="__('Last Name')"
+          />
+        </div>
         <div class="grid grid-cols-2 gap-3">
           <FormControl
             v-model="user.doc.crm_job_title"
@@ -146,21 +145,19 @@
 </template>
 
 <script setup>
-import EditIcon from '@/components/Icons/EditIcon.vue'
 import SettingsLayoutBase from '@/components/Layouts/SettingsLayoutBase.vue'
 import ChangePasswordModal from '@/components/Modals/ChangePasswordModal.vue'
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts'
 import { validateIsImageFile } from '@/utils'
 import {
   Avatar,
-  TextInput,
   FileUploader,
   LoadingIndicator,
   toast,
   Tooltip,
   createDocumentResource,
 } from 'frappe-ui'
-import { ref, computed, inject, useTemplateRef, nextTick } from 'vue'
+import { ref, computed, inject } from 'vue'
 
 const emit = defineEmits(['updateStep'])
 
@@ -169,42 +166,38 @@ const user = createDocumentResource({ doctype: 'User', name: sessionUser })
 
 const showChangePasswordModal = ref(false)
 const isHoveringRemove = ref(false)
-const editName = ref(false)
 
 const profileTooltipText = computed(() => {
   if (isHoveringRemove.value) return __('Remove Photo')
   return user.doc.user_image ? __('Change Photo') : __('Upload Photo')
 })
 
-const fullNameRef = useTemplateRef('fullNameRef')
-const fullName = computed({
-  get: () =>
-    [user.doc.first_name, user.doc.last_name].filter(Boolean).join(' '),
-  set: (val) => {
-    const [firstName, ...lastName] = val.split(' ')
-    user.doc.first_name = firstName
-    user.doc.last_name = lastName.join(' ')
-  },
-})
-
-function editFullName() {
-  editName.value = true
-  nextTick(() => fullNameRef.value?.el?.focus())
-}
+const fullName = computed(() =>
+  [user.doc.first_name, user.doc.middle_name, user.doc.last_name]
+    .filter(Boolean)
+    .join(' '),
+)
 
 const isDirty = computed(() => {
   return JSON.stringify(user.doc) !== JSON.stringify(user.originalDoc)
 })
 
+function isValidPhone(p) {
+  if (!p) return true
+  return /^[+]?[\d\s().-]{7,20}$/.test(p)
+}
+
 function save() {
   if (!isDirty.value) {
-    editName.value = false
+    return
+  }
+  if (!isValidPhone(user.doc.mobile_no)) {
+    toast.error(__('Please enter a valid phone number'))
     return
   }
 
   user.save.submit(null, {
     onSuccess: () => {
-      editName.value = false
       toast.success(__('Profile Updated Successfully'))
     },
     onError: (err) => {

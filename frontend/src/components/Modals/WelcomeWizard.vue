@@ -75,11 +75,16 @@
         <p class="text-p-sm text-ink-gray-6">
           {{ __('Tell us a bit about you — this appears on your emails and records.') }}
         </p>
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-3 gap-3">
           <FormControl
             v-model="firstName"
             :label="__('First Name')"
             :placeholder="__('First Name')"
+          />
+          <FormControl
+            v-model="middleName"
+            :label="__('Middle Name')"
+            :placeholder="__('Middle Name')"
           />
           <FormControl
             v-model="lastName"
@@ -150,6 +155,7 @@ const confirmPassword = ref('')
 const passwordMessage = ref('')
 
 const firstName = ref('')
+const middleName = ref('')
 const lastName = ref('')
 const jobTitle = ref('')
 const phone = ref('')
@@ -195,6 +201,7 @@ const saveProfile = createResource({
   url: 'crm.api.user.set_initial_profile',
   makeParams: () => ({
     first_name: firstName.value,
+    middle_name: middleName.value,
     last_name: lastName.value,
     mobile_no: phone.value,
     job_title: jobTitle.value,
@@ -212,7 +219,16 @@ const saveProfile = createResource({
 function goNext() {
   if (canNext.value) setPassword.submit()
 }
+function isValidPhone(p) {
+  return !p || /^[+]?[\d\s().-]{7,20}$/.test(p)
+}
+
 function finish() {
-  if (firstName.value) saveProfile.submit()
+  if (!firstName.value) return
+  if (!isValidPhone(phone.value)) {
+    toast.error(__('Please enter a valid phone number'))
+    return
+  }
+  saveProfile.submit()
 }
 </script>

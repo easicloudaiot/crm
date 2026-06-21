@@ -220,6 +220,7 @@ def set_initial_password(new_password: str):
 def set_initial_profile(
 	first_name: str,
 	last_name: str | None = None,
+	middle_name: str | None = None,
 	mobile_no: str | None = None,
 	job_title: str | None = None,
 ):
@@ -235,6 +236,7 @@ def set_initial_profile(
 	if first_name:
 		doc.first_name = first_name.strip()
 	doc.last_name = (last_name or "").strip()
+	doc.middle_name = (middle_name or "").strip()
 	if mobile_no is not None:
 		doc.mobile_no = mobile_no.strip()
 	if job_title is not None and doc.meta.has_field("crm_job_title"):
