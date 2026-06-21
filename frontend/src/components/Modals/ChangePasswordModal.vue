@@ -84,7 +84,7 @@ const show = defineModel({ type: Boolean })
 const { updateOnboardingStep } = useOnboarding('frappecrm')
 
 // Newly-invited users have no password yet -> "Set" mode (no current password).
-const hasPassword = ref(true)
+const hasPassword = ref(null)
 const currentPassword = ref('')
 const newPassword = ref('')
 const confirmPassword = ref('')
@@ -98,9 +98,15 @@ const hasPasswordResource = createResource({
   },
 })
 
-watch(show, (visible) => {
-  if (visible) hasPasswordResource.fetch()
-})
+watch(
+  show,
+  (visible) => {
+    if (visible) hasPasswordResource.fetch()
+  },
+  // Modal is v-if-mounted only when opened, so `show` is already true at mount;
+  // immediate ensures the has_password check actually runs on first open.
+  { immediate: true },
+)
 
 function onPasswordSet() {
   updateOnboardingStep('setup_your_password')
