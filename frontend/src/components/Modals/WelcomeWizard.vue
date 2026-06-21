@@ -97,10 +97,10 @@
           :label="__('Job Title')"
           :placeholder="__('e.g. Account Executive')"
         />
-        <FormControl
+        <PhoneInput
           v-model="phone"
           :label="__('Phone')"
-          :placeholder="__('e.g. +1 555 123 4567')"
+          @update:valid="phoneValid = $event"
         />
       </div>
     </template>
@@ -119,7 +119,7 @@
           v-if="step === 2"
           variant="solid"
           :label="__('Finish')"
-          :disabled="!firstName"
+          :disabled="!firstName || !phoneValid"
           :loading="saveProfile.loading"
           @click="finish()"
         />
@@ -138,6 +138,7 @@ import {
   createResource,
   toast,
 } from 'frappe-ui'
+import PhoneInput from '@/components/PhoneInput.vue'
 import { getSettings } from '@/stores/settings'
 import { ref, computed, watch } from 'vue'
 
@@ -159,6 +160,7 @@ const middleName = ref('')
 const lastName = ref('')
 const jobTitle = ref('')
 const phone = ref('')
+const phoneValid = ref(true)
 
 function isStrongPassword(p) {
   return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s]).{8,}$/.test(p)

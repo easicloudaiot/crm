@@ -89,14 +89,19 @@
             :label="__('Job Title')"
             :placeholder="__('e.g. Account Executive')"
           />
-          <FormControl
+          <PhoneInput
             v-model="user.doc.mobile_no"
             :label="__('Phone')"
-            :placeholder="__('e.g. +1 555 123 4567')"
+            @update:valid="phoneValid = $event"
           />
         </div>
         <div v-if="isDirty">
-          <Button variant="solid" :label="__('Save')" @click="save" />
+          <Button
+            variant="solid"
+            :label="__('Save')"
+            :disabled="!phoneValid"
+            @click="save"
+          />
         </div>
       </div>
       <div>
@@ -145,6 +150,7 @@
 </template>
 
 <script setup>
+import PhoneInput from '@/components/PhoneInput.vue'
 import SettingsLayoutBase from '@/components/Layouts/SettingsLayoutBase.vue'
 import ChangePasswordModal from '@/components/Modals/ChangePasswordModal.vue'
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts'
@@ -165,6 +171,7 @@ const { user: sessionUser } = inject('session')
 const user = createDocumentResource({ doctype: 'User', name: sessionUser })
 
 const showChangePasswordModal = ref(false)
+const phoneValid = ref(true)
 const isHoveringRemove = ref(false)
 
 const profileTooltipText = computed(() => {
