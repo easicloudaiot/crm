@@ -45,6 +45,7 @@
           />
         </div>
         <TextEditor
+          :key="sigKey"
           editor-class="prose-sm min-h-28 max-w-full border rounded-b-lg border-t-0 p-2 border-outline-gray-modals"
           :content="user.doc.email_signature"
           placeholder="Type something..."
@@ -135,13 +136,14 @@ import {
   TextEditor,
   toast,
 } from 'frappe-ui'
-import { computed, inject } from 'vue'
+import { ref, computed, inject } from 'vue'
 
 const emit = defineEmits(['updateStep'])
 
 const { user: sessionUser } = inject('session')
 
 const user = createDocumentResource({ doctype: 'User', name: sessionUser })
+const sigKey = ref(0)
 
 const emails = createListResource({
   doctype: 'Email Account',
@@ -195,8 +197,10 @@ function resetSignature() {
   user.doc.signature_is_default = 1
   user.save.submit(null, {
     onSuccess: () => {
+      // server hook regenerated email_signature; the save response updated
+      // user.doc -> bump the key to re-render the editor in place (stay here)
+      sigKey.value++
       toast.success(__('Signature reset to the default'))
-      window.location.reload()
     },
   })
 }
