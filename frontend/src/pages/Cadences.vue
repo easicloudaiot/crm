@@ -22,6 +22,7 @@
             <th class="px-4 py-2.5 font-medium">{{ __('Cadence') }}</th>
             <th class="px-4 py-2.5 font-medium">{{ __('Solution') }}</th>
             <th class="px-4 py-2.5 font-medium">{{ __('Steps') }}</th>
+            <th class="px-4 py-2.5 font-medium">{{ __('Enrolled') }}</th>
             <th class="px-4 py-2.5 font-medium">{{ __('Status') }}</th>
           </tr>
         </thead>
@@ -35,6 +36,13 @@
             <td class="px-4 py-2.5 font-medium text-ink-gray-8">{{ c.title || c.name }}</td>
             <td class="px-4 py-2.5 text-ink-gray-7">{{ c.solution || '—' }}</td>
             <td class="px-4 py-2.5 text-ink-gray-7">{{ c.steps }}</td>
+            <td class="px-4 py-2.5 text-ink-gray-7">
+              {{ c.active_enrollments || 0 }} {{ __('active') }}
+              <span
+                v-if="(c.total_enrollments || 0) > (c.active_enrollments || 0)"
+                class="text-ink-gray-4"
+              >· {{ c.total_enrollments }} {{ __('total') }}</span>
+            </td>
             <td class="px-4 py-2.5">
               <Badge variant="subtle" theme="green" :label="__('Published')" />
             </td>
@@ -50,6 +58,7 @@
       <div v-else-if="detail.data" class="flex flex-col gap-3">
         <div class="text-p-sm text-ink-gray-6">
           {{ __('Solution') }}: <b>{{ detail.data.solution || __('Any') }}</b>
+          · {{ __('Sends ~') }}<b>{{ hourLabel(detail.data.send_hour) }}</b>
           · {{ detail.data.stop_on_reply ? __('Stops on reply') : __('No reply-stop') }}
         </div>
         <div class="overflow-hidden rounded-md border border-outline-gray-2">
@@ -94,6 +103,10 @@ const detail = createResource({
   url: 'easicloud_crm.cadence.get_cadence_detail',
   makeParams: () => ({ cadence: current.value }),
 })
+function hourLabel(h) {
+  const n = h === undefined || h === null ? 12 : h
+  return String(n).padStart(2, '0') + ':00'
+}
 function openDetail(name) {
   current.value = name
   detail.fetch()

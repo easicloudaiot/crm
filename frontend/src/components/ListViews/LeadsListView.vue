@@ -68,14 +68,20 @@
           </div>
           <div v-else-if="column.key === 'lead_name'">
             <Tooltip :text="row && row.custom_campaign_status ? __('Cadence') + ': ' + row.custom_campaign_status : ''">
-              <Avatar
-                v-if="item.label"
-                class="flex items-center"
-                :class="campaignRingClass(row && row.custom_campaign_status)"
-                :image="item.image"
-                :label="item.image_label"
-                size="sm"
-              />
+              <span class="relative inline-flex">
+                <Avatar
+                  v-if="item.label"
+                  class="flex items-center"
+                  :image="item.image"
+                  :label="item.image_label"
+                  size="sm"
+                />
+                <span
+                  v-if="row && campaignDotClass(row.custom_campaign_status)"
+                  class="absolute bottom-0 right-0 h-2 w-2 rounded-full ring-2 ring-white"
+                  :class="campaignDotClass(row.custom_campaign_status)"
+                />
+              </span>
             </Tooltip>
           </div>
           <div v-else-if="column.key === 'lead_owner'">
@@ -246,14 +252,14 @@ import {
 import { sessionStore } from '@/stores/session'
 import { ref, computed, watch } from 'vue'
 
-function campaignRingClass(s) {
+function campaignDotClass(s) {
   return {
-    Active: 'ring-2 ring-green-500',
-    Paused: 'ring-2 ring-amber-500',
-    Completed: 'ring-2 ring-gray-400',
-    Stopped: 'ring-2 ring-red-500',
-    Bounced: 'ring-2 ring-red-500',
-    Unsubscribed: 'ring-2 ring-red-500',
+    Active: 'bg-green-500',
+    Paused: 'bg-amber-500',
+    Completed: 'bg-gray-400',
+    Stopped: 'bg-red-500',
+    Bounced: 'bg-red-500',
+    Unsubscribed: 'bg-red-500',
   }[s] || ''
 }
 import { useRoute } from 'vue-router'
