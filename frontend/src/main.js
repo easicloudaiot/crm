@@ -26,6 +26,40 @@ import {
 
 import { telemetryPlugin } from 'frappe-ui/frappe'
 
+// --- Per-tenant brand accent (Tier A) ---
+// Custom Branding sets crm_brand_color (a per-site default) -> boot -> window.sysdefaults.
+// Remap frappe-ui's accent (blue) family at runtime; blank -> frappe-ui default. No rebuild.
+function _shade(hex, pct) {
+  const m = /^#?([0-9a-f]{6})$/i.exec((hex || '').trim())
+  if (!m) return hex
+  const n = parseInt(m[1], 16)
+  let r = (n >> 16) & 255,
+    g = (n >> 8) & 255,
+    b = n & 255
+  const t = pct < 0 ? 0 : 255,
+    f = Math.min(Math.abs(pct), 100) / 100
+  r = Math.round((t - r) * f + r)
+  g = Math.round((t - g) * f + g)
+  b = Math.round((t - b) * f + b)
+  return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)
+}
+function applyBrandTheme() {
+  const sd = window.sysdefaults || {}
+  const primary = sd.crm_brand_color
+  if (!primary) return // blank -> frappe-ui default blue
+  const hover = sd.crm_brand_color_hover || _shade(primary, -10)
+  const s = document.documentElement.style
+  s.setProperty('--blue-500', primary)
+  s.setProperty('--blue-600', _shade(primary, -8))
+  s.setProperty('--blue-700', _shade(primary, -16))
+  s.setProperty('--surface-blue-2', _shade(primary, 88))
+  s.setProperty('--surface-blue-3', hover)
+  s.setProperty('--ink-blue-2', primary)
+  s.setProperty('--ink-blue-3', _shade(primary, -10))
+  s.setProperty('--outline-blue-1', _shade(primary, 70))
+}
+applyBrandTheme() // prod: window.sysdefaults is set by the inline boot before this module
+
 let globalComponents = {
   Button,
   TextInput,
@@ -72,6 +106,7 @@ if (import.meta.env.DEV) {
       for (let key in values) {
         window[key] = values[key]
       }
+      applyBrandTheme()
       socket = initSocket()
       app.config.globalProperties.$socket = socket
       app.mount('#app')
