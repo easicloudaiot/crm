@@ -162,8 +162,8 @@ import {
   toast,
   Tooltip,
   createDocumentResource,
-  useOnboarding,
 } from 'frappe-ui'
+import { useOnboarding } from 'frappe-ui/frappe'
 import { ref, computed, inject } from 'vue'
 
 const emit = defineEmits(['updateStep'])
