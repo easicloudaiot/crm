@@ -320,6 +320,7 @@ class CRMLead(Document):
 			"idx",
 			"docstatus",
 			"status",
+			"custom_campaign_status",
 			"email",
 			"mobile_no",
 			"phone",

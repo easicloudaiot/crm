@@ -158,6 +158,8 @@ import { getSettings } from '@/stores/settings'
 const { brand } = getSettings()
 import BrushCleaningIcon from '~icons/lucide/brush-cleaning'
 import LucideLayoutDashboard from '~icons/lucide/layout-dashboard'
+import LucideMegaphone from '~icons/lucide/megaphone'
+import LucideCalendarClock from '~icons/lucide/calendar-clock'
 import CRMLogo from '@/components/Icons/CRMLogo.vue'
 import InviteIcon from '@/components/Icons/InviteIcon.vue'
 import ConvertIcon from '@/components/Icons/ConvertIcon.vue'
@@ -268,6 +270,16 @@ const links = [
     label: 'Call Logs',
     icon: PhoneIcon,
     to: 'Call Logs',
+  },
+  {
+    label: 'Cadences',
+    icon: LucideMegaphone,
+    to: 'Cadences',
+  },
+  {
+    label: 'Follow-ups',
+    icon: LucideCalendarClock,
+    to: 'Followups',
   },
 ]
 
@@ -574,8 +586,10 @@ onMounted(async () => {
 
   setUp(filteredSteps)
 
-  // auto-complete "Complete your profile" once the signature fields are filled
+  // self-heal steps the Welcome wizard completes but doesn't mark (survives reload)
   if (onboardingEnabled && !isOnboardingStepsCompleted.value) {
+    const hasPassword = await call('crm.api.user.has_password')
+    if (hasPassword) updateOnboardingStep('setup_your_password')
     const complete = await call('crm.api.user.profile_complete')
     if (complete) updateOnboardingStep('complete_your_profile')
   }

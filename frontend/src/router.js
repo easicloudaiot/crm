@@ -25,6 +25,18 @@ const routes = [
     component: () => import('@/pages/Leads.vue'),
   },
   {
+    alias: '/cadences',
+    path: '/cadences',
+    name: 'Cadences',
+    component: () => import('@/pages/Cadences.vue'),
+  },
+  {
+    alias: '/followups',
+    path: '/followups',
+    name: 'Followups',
+    component: () => import('@/pages/Followups.vue'),
+  },
+  {
     path: '/leads/:leadId',
     name: 'Lead',
     component: () => import(`@/pages/${handleMobileView('Lead')}.vue`),

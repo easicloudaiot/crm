@@ -34,6 +34,25 @@
           </Button>
         </template>
       </Dropdown>
+      <Dropdown
+        v-if="doc.name"
+        :options="
+          !doc.custom_campaign_status || doc.custom_campaign_status === 'Not Enrolled'
+            ? [{ label: __('Enroll in Cadence'), onClick: () => (showCadenceEnroll = true) }]
+            : doc.custom_campaign_status === 'Paused'
+              ? [
+                  { label: __('Resume Cadence'), onClick: () => cadenceAction('resume') },
+                  { label: __('Remove from Cadence'), onClick: () => cadenceAction('unenroll') },
+                ]
+              : [
+                  { label: __('Preview Next Email'), onClick: () => (showCadencePreview = true) },
+                  { label: __('Pause Cadence'), onClick: () => cadenceAction('pause') },
+                  { label: __('Remove from Cadence'), onClick: () => cadenceAction('unenroll') },
+                ]
+        "
+      >
+        <Button :label="__('Cadence')" iconRight="chevron-down" />
+      </Dropdown>
       <Button
         :label="__('Convert to Deal')"
         variant="solid"
@@ -231,6 +250,17 @@
     doctype="CRM Lead"
     :document="document"
   />
+  <CadenceEnrollmentModal
+    v-if="showCadenceEnroll"
+    v-model="showCadenceEnroll"
+    :docs="[leadId]"
+    @reload="() => document.reload?.()"
+  />
+  <CadencePreviewModal
+    v-if="showCadencePreview"
+    v-model="showCadencePreview"
+    :lead="leadId"
+  />
 </template>
 <script setup>
 import DeleteLinkedDocModal from '@/components/DeleteLinkedDocModal.vue'
@@ -257,6 +287,8 @@ import Activities from '@/components/Activities/Activities.vue'
 import AssignTo from '@/components/AssignTo.vue'
 import FilesUploader from '@/components/FilesUploader/FilesUploader.vue'
 import SidePanelLayout from '@/components/SidePanelLayout.vue'
+import CadenceEnrollmentModal from '@/components/Modals/CadenceEnrollmentModal.vue'
+import CadencePreviewModal from '@/components/Modals/CadencePreviewModal.vue'
 import SLASection from '@/components/SLASection.vue'
 import CustomActions from '@/components/CustomActions.vue'
 import ConvertToDealModal from '@/components/Modals/ConvertToDealModal.vue'
@@ -309,6 +341,17 @@ const errorTitle = ref('')
 const errorMessage = ref('')
 const showDeleteLinkedDocModal = ref(false)
 const showConvertToDealModal = ref(false)
+const showCadenceEnroll = ref(false)
+const showCadencePreview = ref(false)
+
+function cadenceAction(action) {
+  call('easicloud_crm.cadence.' + action, { leads: JSON.stringify([leadId]) })
+    .then(() => {
+      toast.success(__('Done'))
+      document.reload?.()
+    })
+    .catch((e) => toast.error(e.messages?.[0] || __('Action failed')))
+}
 const showFilesUploader = ref(false)
 
 const {

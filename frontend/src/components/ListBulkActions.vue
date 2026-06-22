@@ -28,11 +28,18 @@
     :items="showDeleteDocModal.items"
     :reload="reload"
   />
+  <CadenceEnrollmentModal
+    v-if="showCadenceModal"
+    v-model="showCadenceModal"
+    :docs="cadenceLeads"
+    @reload="reload"
+  />
 </template>
 
 <script setup>
 import EditValueModal from '@/components/Modals/EditValueModal.vue'
 import AssignmentModal from '@/components/Modals/AssignmentModal.vue'
+import CadenceEnrollmentModal from '@/components/Modals/CadenceEnrollmentModal.vue'
 import { setupListCustomizations } from '@/utils'
 import { globalStore } from '@/stores/global'
 import { useTelemetry } from 'frappe-ui/frappe'
@@ -159,6 +166,53 @@ function clearAssignments(selections, unselectAll) {
   })
 }
 
+const showCadenceModal = ref(false)
+const cadenceLeads = ref([])
+
+function enrollInCadence(selections, unselectAll) {
+  cadenceLeads.value = Array.from(selections)
+  showCadenceModal.value = true
+  unselectAllAction.value = unselectAll
+}
+
+function removeFromCadence(selections, unselectAll) {
+  $dialog({
+    title: __('Remove from Cadence'),
+    message: __('Remove {0} lead(s) from their active cadence?', [selections.size]),
+    variant: 'solid',
+    theme: 'red',
+    actions: [
+      {
+        label: __('Remove'),
+        variant: 'solid',
+        theme: 'red',
+        onClick: (close) => {
+          call('easicloud_crm.cadence.unenroll', {
+            leads: JSON.stringify(Array.from(selections)),
+          })
+            .then(() => {
+              toast.success(__('Removed from cadence'))
+              reload(unselectAll)
+              close()
+            })
+            .catch((e) => toast.error(e.messages?.[0] || __('Could not remove')))
+        },
+      },
+    ],
+  })
+}
+
+function cadenceBulk(action, selections, unselectAll) {
+  call('easicloud_crm.cadence.' + action, {
+    leads: JSON.stringify(Array.from(selections)),
+  })
+    .then(() => {
+      toast.success(__('Done'))
+      reload(unselectAll)
+    })
+    .catch((e) => toast.error(e.messages?.[0] || __('Action failed')))
+}
+
 const customBulkActions = ref([])
 const customListActions = ref([])
 
@@ -194,6 +248,22 @@ function bulkActions(selections, unselectAll) {
     actions.push({
       label: __('Convert to Deal'),
       onClick: () => convertToDeal(selections, unselectAll),
+    })
+    actions.push({
+      label: __('Enroll in Cadence'),
+      onClick: () => enrollInCadence(selections, unselectAll),
+    })
+    actions.push({
+      label: __('Remove from Cadence'),
+      onClick: () => removeFromCadence(selections, unselectAll),
+    })
+    actions.push({
+      label: __('Pause Cadence'),
+      onClick: () => cadenceBulk('pause', selections, unselectAll),
+    })
+    actions.push({
+      label: __('Resume Cadence'),
+      onClick: () => cadenceBulk('resume', selections, unselectAll),
     })
   }
 

@@ -355,6 +355,9 @@ def get_data(
 		if group_by_field and group_by_field not in rows:
 			rows.append(group_by_field)
 
+		if doctype == "CRM Lead" and "custom_campaign_status" not in rows:
+			rows.append("custom_campaign_status")
+
 		data = (
 			frappe.get_list(
 				doctype,

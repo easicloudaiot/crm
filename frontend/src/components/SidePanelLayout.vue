@@ -75,6 +75,7 @@
                         <div
                           v-if="
                             field.read_only &&
+                            field.fieldname !== 'custom_campaign_status' &&
                             ![
                               'Int',
                               'Float',
@@ -131,6 +132,13 @@
                           :placeholder="field.placeholder"
                           :debounce="500"
                           @change.stop="fieldChange($event.target.value, field)"
+                        />
+                        <Badge
+                          v-else-if="field.fieldname === 'custom_campaign_status'"
+                          :label="doc[field.fieldname] || __('Not Enrolled')"
+                          :theme="campaignStatusTheme(doc[field.fieldname])"
+                          variant="subtle"
+                          size="md"
                         />
                         <FormControl
                           v-else-if="field.fieldtype === 'Select'"
@@ -429,9 +437,20 @@ import {
   interpolateTemplate,
 } from '@/utils'
 import { flt } from '@/utils/numberFormat.js'
-import { Tooltip, DateTimePicker, DatePicker, TimePicker } from 'frappe-ui'
+import { Tooltip, DateTimePicker, DatePicker, TimePicker, Badge } from 'frappe-ui'
 import { useDocument } from '@/data/document'
 import { ref, computed, getCurrentInstance } from 'vue'
+
+function campaignStatusTheme(s) {
+  return {
+    Active: 'green',
+    Paused: 'orange',
+    Completed: 'gray',
+    Stopped: 'red',
+    Bounced: 'red',
+    Unsubscribed: 'red',
+  }[s] || 'gray'
+}
 
 const props = defineProps({
   sections: { type: Object, default: () => ({}) },
