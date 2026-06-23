@@ -71,7 +71,7 @@ import Autocomplete from '@/components/frappe-ui/Autocomplete.vue'
 import { isTranslatable } from '@/utils'
 import { watchDebounced } from '@vueuse/core'
 import { createResource } from 'frappe-ui'
-import { useAttrs, computed, ref } from 'vue'
+import { useAttrs, computed, ref, inject } from 'vue'
 
 const props = defineProps({
   doctype: { type: String, required: true },
@@ -85,6 +85,25 @@ const emit = defineEmits(['update:modelValue', 'change'])
 const attrs = useAttrs()
 
 const valuePropPassed = computed(() => 'value' in attrs)
+
+// Resolve any "eval:parentDoc.<field>" filter against the injected parent doc
+// (e.g. product picker scoped by the deal's solution). Works in grids + row modals.
+const parentDoc = inject('parentDoc', null)
+const resolvedFilters = computed(() => {
+  const f = props.filters
+  if (!f || typeof f !== 'object' || Array.isArray(f)) return f
+  const pd = parentDoc && 'value' in parentDoc ? parentDoc.value : parentDoc
+  const out = {}
+  for (const [k, v] of Object.entries(f)) {
+    if (typeof v === 'string' && v.startsWith('eval:parentDoc.')) {
+      const val = pd?.[v.slice('eval:parentDoc.'.length)]
+      if (val !== undefined && val !== null && val !== '') out[k] = val
+    } else {
+      out[k] = v
+    }
+  }
+  return out
+})
 
 const value = computed({
   get: () => {
@@ -122,7 +141,7 @@ watchDebounced(
 )
 
 watchDebounced(
-  () => props.filters,
+  () => resolvedFilters.value,
   () => {
     reload('', true)
   },
@@ -131,12 +150,12 @@ watchDebounced(
 
 const options = createResource({
   url: 'frappe.desk.search.search_link',
-  cache: [props.doctype, text.value, props.hideMe, props.filters],
+  cache: [props.doctype, text.value, props.hideMe, resolvedFilters.value],
   method: 'POST',
   params: {
     txt: text.value,
     doctype: props.doctype,
-    filters: props.filters,
+    filters: resolvedFilters.value,
   },
   transform: (data) => {
     let allData = data.map((option) => {
@@ -179,7 +198,7 @@ function reload(val, force = false) {
     params: {
       txt: val,
       doctype: props.doctype,
-      filters: props.filters,
+      filters: resolvedFilters.value,
     },
   })
   options.reload()

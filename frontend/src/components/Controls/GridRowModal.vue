@@ -44,7 +44,7 @@ import EditIcon from '@/components/Icons/EditIcon.vue'
 import FieldLayout from '@/components/FieldLayout/FieldLayout.vue'
 import { usersStore } from '@/stores/users'
 import { createResource } from 'frappe-ui'
-import { nextTick, provide } from 'vue'
+import { nextTick, provide, toRef } from 'vue'
 
 const props = defineProps({
   index: { type: Number, default: 0 },
@@ -52,11 +52,13 @@ const props = defineProps({
   doctype: { type: String, default: '' },
   parentDoctype: { type: String, default: '' },
   parentFieldname: { type: String, default: '' },
+  parentDoc: { type: Object, default: () => ({}) },
 })
 
 const { isManager } = usersStore()
 
 provide('parentFieldname', props.parentFieldname)
+provide('parentDoc', toRef(props, 'parentDoc'))
 
 const show = defineModel({ type: Boolean })
 const showGridRowFieldsModal = defineModel('showGridRowFieldsModal', {

@@ -149,7 +149,7 @@
                             ? field.options
                             : row[field.options]
                         "
-                        :filters="field.filters"
+                        :filters="resolveFilters(field)"
                         :onCreate="
                           (value, close) => field.create(v, field, row, close)
                         "
@@ -427,6 +427,7 @@
                 :doctype="doctype"
                 :parentDoctype="parentDoctype"
                 :parentFieldname="parentFieldname"
+                :parentDoc="parentDoc"
               />
             </div>
           </template>
@@ -550,6 +551,24 @@ const rows = defineModel({ type: Array, default: () => [] })
 const parentDoc = defineModel('parent', { type: Object, default: () => ({}) })
 
 provide('parentDoc', parentDoc)
+
+// Resolve link_filters, evaluating any "eval:parentDoc.<field>" reference
+// against the parent doc so a child link can be scoped by a parent value
+// (e.g. product picker filtered by the deal's solution). Reactive to parentDoc.
+function resolveFilters(field) {
+  const f = parseLinkFilters(field.link_filters)
+  if (!f || typeof f !== 'object') return field.filters || []
+  const out = {}
+  for (const [k, v] of Object.entries(f)) {
+    if (typeof v === 'string' && v.startsWith('eval:parentDoc.')) {
+      const val = parentDoc.value?.[v.slice('eval:parentDoc.'.length)]
+      if (val !== undefined && val !== null && val !== '') out[k] = val
+    } else {
+      out[k] = v
+    }
+  }
+  return out
+}
 provide('fieldPropertyOverrides', parentFieldPropertyOverrides)
 provide('parentFieldname', props.parentFieldname)
 
