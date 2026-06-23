@@ -1,115 +1,115 @@
 <template>
   <LayoutHeader>
     <template #left-header>
-      <div class="flex items-center gap-2 font-semibold text-ink-gray-9">
-        <LucideMegaphone class="h-4 w-4" />
-        {{ __('Cadences') }}
-      </div>
+      <ViewBreadcrumbs v-model="viewControls" routeName="Cadences" />
     </template>
   </LayoutHeader>
-  <div class="flex flex-col gap-4 overflow-y-auto p-6">
-    <p class="text-p-sm text-ink-gray-5">
-      {{ __('Published cadences you can enroll leads into — from a lead, or in bulk from the Leads list. Click a cadence to see its steps. New cadences are created by your admin (rep-proposed cadences with approval are coming).') }}
-    </p>
-    <div v-if="cadences.loading" class="text-base text-ink-gray-5">{{ __('Loading…') }}</div>
-    <div v-else-if="!cadences.data || !cadences.data.length" class="text-base text-ink-gray-5">
-      {{ __('No published cadences yet.') }}
-    </div>
-    <div v-else class="overflow-hidden rounded-lg border border-outline-gray-2">
-      <table class="w-full text-base">
-        <thead class="bg-surface-gray-2 text-left text-ink-gray-6">
-          <tr>
-            <th class="px-4 py-2.5 font-medium">{{ __('Cadence') }}</th>
-            <th class="px-4 py-2.5 font-medium">{{ __('Solution') }}</th>
-            <th class="px-4 py-2.5 font-medium">{{ __('Steps') }}</th>
-            <th class="px-4 py-2.5 font-medium">{{ __('Enrolled') }}</th>
-            <th class="px-4 py-2.5 font-medium">{{ __('Status') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="c in cadences.data"
-            :key="c.name"
-            class="cursor-pointer border-t border-outline-gray-1 hover:bg-surface-gray-1"
-            @click="openDetail(c.name)"
-          >
-            <td class="px-4 py-2.5 font-medium text-ink-gray-8">{{ c.title || c.name }}</td>
-            <td class="px-4 py-2.5 text-ink-gray-7">{{ c.solution || '—' }}</td>
-            <td class="px-4 py-2.5 text-ink-gray-7">{{ c.steps }}</td>
-            <td class="px-4 py-2.5 text-ink-gray-7">
-              {{ c.active_enrollments || 0 }} {{ __('active') }}
-              <span
-                v-if="(c.total_enrollments || 0) > (c.active_enrollments || 0)"
-                class="text-ink-gray-4"
-              >· {{ c.total_enrollments }} {{ __('total') }}</span>
-            </td>
-            <td class="px-4 py-2.5">
-              <Badge variant="subtle" theme="green" :label="__('Published')" />
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <Dialog v-model="showDetail" :options="{ title: detail.data && detail.data.title || __('Cadence'), size: 'lg' }">
-    <template #body-content>
-      <div v-if="detail.loading" class="text-base text-ink-gray-5">{{ __('Loading…') }}</div>
-      <div v-else-if="detail.data" class="flex flex-col gap-3">
-        <div class="text-p-sm text-ink-gray-6">
-          {{ __('Solution') }}: <b>{{ detail.data.solution || __('Any') }}</b>
-          · {{ __('Sends ~') }}<b>{{ hourLabel(detail.data.send_hour) }}</b>
-          · {{ detail.data.stop_on_reply ? __('Stops on reply') : __('No reply-stop') }}
-        </div>
-        <div class="overflow-hidden rounded-md border border-outline-gray-2">
-          <table class="w-full text-base">
-            <thead class="bg-surface-gray-2 text-left text-ink-gray-6">
-              <tr>
-                <th class="px-3 py-2 font-medium">#</th>
-                <th class="px-3 py-2 font-medium">{{ __('Email') }}</th>
-                <th class="px-3 py-2 font-medium">{{ __('Subject') }}</th>
-                <th class="px-3 py-2 font-medium">{{ __('Wait (days)') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(s, i) in detail.data.steps" :key="i" class="border-t border-outline-gray-1">
-                <td class="px-3 py-2 text-ink-gray-7">{{ i + 1 }}</td>
-                <td class="px-3 py-2 text-ink-gray-7">{{ s.email_template || s.step_type }}</td>
-                <td class="px-3 py-2 text-ink-gray-8">{{ s.subject || '—' }}</td>
-                <td class="px-3 py-2 text-ink-gray-7">{{ s.wait_days }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </template>
-  </Dialog>
+  <ViewControls
+    ref="viewControls"
+    v-model="cadences"
+    v-model:loadMore="loadMore"
+    v-model:resizeColumn="triggerResize"
+    v-model:updatedPageCount="updatedPageCount"
+    doctype="CRM Cadence"
+    :options="{ allowedViews: ['list', 'group_by'] }"
+  />
+  <CadencesListView
+    v-if="cadences.data && rows.length"
+    ref="cadencesListView"
+    v-model="cadences.data.page_length_count"
+    v-model:list="cadences"
+    :rows="rows"
+    :columns="columns"
+    :options="{
+      showTooltip: false,
+      resizeColumn: true,
+      rowCount: cadences.data.row_count,
+      totalCount: cadences.data.total_count,
+    }"
+    @loadMore="() => loadMore++"
+    @columnWidthUpdated="() => triggerResize++"
+    @updatePageCount="(count) => (updatedPageCount = count)"
+    @applyFilter="(data) => viewControls.applyFilter(data)"
+  />
+  <EmptyState
+    v-else-if="cadences.data && !rows.length"
+    name="Cadences"
+    :icon="LucideMegaphone"
+  />
 </template>
 
 <script setup>
+import ViewBreadcrumbs from '@/components/ViewBreadcrumbs.vue'
 import LayoutHeader from '@/components/LayoutHeader.vue'
+import CadencesListView from '@/components/ListViews/CadencesListView.vue'
+import EmptyState from '@/components/ListViews/EmptyState.vue'
+import ViewControls from '@/components/ViewControls.vue'
 import LucideMegaphone from '~icons/lucide/megaphone'
-import { Badge, Dialog, createResource } from 'frappe-ui'
-import { ref } from 'vue'
+import { formatDate, timeAgo } from '@/utils'
+import { ref, computed } from 'vue'
 
-const cadences = createResource({
-  url: 'easicloud_crm.cadence.get_published_cadences',
-  auto: true,
+const cadencesListView = ref(null)
+
+// cadences data is loaded in the ViewControls component
+const cadences = ref({})
+const loadMore = ref(1)
+const triggerResize = ref(1)
+const updatedPageCount = ref(20)
+const viewControls = ref(null)
+
+function parseRows(list) {
+  return list.map((cadence) => {
+    let _rows = {}
+    cadences.value?.data.rows.forEach((row) => {
+      _rows[row] = cadence[row]
+      if (['modified', 'creation'].includes(row)) {
+        _rows[row] = {
+          label: formatDate(cadence[row]),
+          timeAgo: __(timeAgo(cadence[row])),
+        }
+      }
+    })
+    return _rows
+  })
+}
+
+function getGroupedByRows(listRows, groupByField) {
+  let groupedRows = []
+  groupByField.options?.forEach((option) => {
+    let filteredRows = option
+      ? listRows.filter((row) => row[groupByField.fieldname] == option)
+      : listRows.filter((row) => !row[groupByField.fieldname])
+    groupedRows.push({
+      label: groupByField.label,
+      group: option || __(' '),
+      collapsed: false,
+      rows: parseRows(filteredRows),
+    })
+  })
+  return groupedRows
+}
+
+const rows = computed(() => {
+  const d = cadences.value?.data
+  if (!d?.data) return []
+  if (d.view_type === 'group_by') {
+    if (!d.group_by_field?.fieldname) return []
+    return getGroupedByRows(d.data, d.group_by_field)
+  }
+  if (!['list', 'group_by'].includes(d.view_type)) return []
+  return parseRows(d.data)
 })
 
-const current = ref('')
-const showDetail = ref(false)
-const detail = createResource({
-  url: 'easicloud_crm.cadence.get_cadence_detail',
-  makeParams: () => ({ cadence: current.value }),
+const columns = computed(() => {
+  let _columns = cadences.value?.data?.columns || []
+  if (_columns.length) {
+    _columns = _columns.map((col, index) => {
+      if (index === _columns.length - 1) {
+        return { ...col, align: 'right' }
+      }
+      return col
+    })
+  }
+  return _columns
 })
-function hourLabel(h) {
-  const n = h === undefined || h === null ? 12 : h
-  return String(n).padStart(2, '0') + ':00'
-}
-function openDetail(name) {
-  current.value = name
-  detail.fetch()
-  showDetail.value = true
-}
 </script>

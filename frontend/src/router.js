@@ -26,21 +26,33 @@ const routes = [
   },
   {
     alias: '/cadences',
-    path: '/cadences',
+    path: '/cadences/view/:viewType?',
     name: 'Cadences',
     component: () => import('@/pages/Cadences.vue'),
   },
   {
+    path: '/cadences/:cadenceId',
+    name: 'Cadence',
+    component: () => import('@/pages/CadenceDetail.vue'),
+    props: true,
+  },
+  {
     alias: '/followups',
-    path: '/followups',
+    path: '/followups/view/:viewType?',
     name: 'Followups',
     component: () => import('@/pages/Followups.vue'),
   },
   {
     alias: '/email-templates',
-    path: '/email-templates',
+    path: '/email-templates/view/:viewType?',
     name: 'EmailTemplates',
     component: () => import('@/pages/EmailTemplates.vue'),
+  },
+  {
+    path: '/email-templates/:templateId',
+    name: 'EmailTemplate',
+    component: () => import('@/pages/EmailTemplateDetail.vue'),
+    props: true,
   },
   {
     path: '/leads/:leadId',
@@ -206,6 +218,9 @@ router.beforeEach(async (to, from, next) => {
       'Notes',
       'Tasks',
       'Call Logs',
+      'Cadences',
+      'EmailTemplates',
+      'Followups',
     ].includes(to.name) &&
     !to.query?.view
   ) {
@@ -224,6 +239,9 @@ router.beforeEach(async (to, from, next) => {
         Notes: 'FCRM Note',
         Tasks: 'CRM Task',
         'Call Logs': 'CRM Call Log',
+        Cadences: 'CRM Cadence',
+        EmailTemplates: 'Email Template',
+        Followups: 'CRM Cadence Enrollment',
       }
 
       const doctype = doctypeMap[to.name]

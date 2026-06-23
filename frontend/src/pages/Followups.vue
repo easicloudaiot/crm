@@ -1,75 +1,122 @@
 <template>
   <LayoutHeader>
     <template #left-header>
-      <div class="flex items-center gap-2 font-semibold text-ink-gray-9">
-        <LucideCalendarClock class="h-4 w-4" />
-        {{ __('Follow-ups Due') }}
-      </div>
+      <ViewBreadcrumbs v-model="viewControls" routeName="Followups" />
     </template>
   </LayoutHeader>
-  <div class="flex flex-col gap-4 overflow-y-auto p-6">
-    <p class="text-p-sm text-ink-gray-5">
-      {{ __('Cadence follow-ups going out tomorrow. If a lead has already replied, Pause or Remove it so it stops receiving emails.') }}
-    </p>
-    <div v-if="due.loading" class="text-base text-ink-gray-5">{{ __('Loading…') }}</div>
-    <div v-else-if="!due.data || !due.data.length" class="text-base text-ink-gray-5">
-      {{ __('Nothing due tomorrow. 🎉') }}
-    </div>
-    <div v-else class="overflow-hidden rounded-lg border border-outline-gray-2">
-      <table class="w-full text-base">
-        <thead class="bg-surface-gray-2 text-left text-ink-gray-6">
-          <tr>
-            <th class="px-4 py-2.5 font-medium">{{ __('Lead') }}</th>
-            <th class="px-4 py-2.5 font-medium">{{ __('Organization') }}</th>
-            <th class="px-4 py-2.5 font-medium">{{ __('Cadence') }}</th>
-            <th class="px-4 py-2.5 font-medium">{{ __('Next Email') }}</th>
-            <th class="px-4 py-2.5 text-right font-medium">{{ __('Action') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="r in due.data" :key="r.lead" class="border-t border-outline-gray-1">
-            <td class="px-4 py-2.5 font-medium text-ink-gray-8">
-              <router-link :to="{ name: 'Lead', params: { leadId: r.lead } }" class="hover:underline">
-                {{ r.lead_name }}
-              </router-link>
-            </td>
-            <td class="px-4 py-2.5 text-ink-gray-7">{{ r.organization || '—' }}</td>
-            <td class="px-4 py-2.5 text-ink-gray-7">{{ r.cadence }}</td>
-            <td class="px-4 py-2.5 text-ink-gray-7">{{ r.next_email || '—' }}</td>
-            <td class="px-4 py-2.5">
-              <div class="flex justify-end gap-2">
-                <Button :label="__('Pause')" :loading="busy === r.lead" @click="act('pause', r.lead)" />
-                <Button :label="__('Remove')" theme="red" :loading="busy === r.lead" @click="act('unenroll', r.lead)" />
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
+  <ViewControls
+    ref="viewControls"
+    v-model="enrollments"
+    v-model:loadMore="loadMore"
+    v-model:resizeColumn="triggerResize"
+    v-model:updatedPageCount="updatedPageCount"
+    doctype="CRM Cadence Enrollment"
+    :filters="{ status: 'Active' }"
+    :options="{ allowedViews: ['list', 'group_by'] }"
+  />
+  <EnrollmentsListView
+    v-if="enrollments.data && rows.length"
+    ref="enrollmentsListView"
+    v-model="enrollments.data.page_length_count"
+    v-model:list="enrollments"
+    :rows="rows"
+    :columns="columns"
+    :options="{
+      selectable: true,
+      showTooltip: false,
+      resizeColumn: true,
+      rowCount: enrollments.data.row_count,
+      totalCount: enrollments.data.total_count,
+    }"
+    @loadMore="() => loadMore++"
+    @columnWidthUpdated="() => triggerResize++"
+    @updatePageCount="(count) => (updatedPageCount = count)"
+    @applyFilter="(data) => viewControls.applyFilter(data)"
+    @selectionsChanged="
+      (selections) => viewControls.updateSelections(selections)
+    "
+  />
+  <EmptyState
+    v-else-if="enrollments.data && !rows.length"
+    name="Followups"
+    :icon="LucideCalendarClock"
+  />
 </template>
 
 <script setup>
+import ViewBreadcrumbs from '@/components/ViewBreadcrumbs.vue'
 import LayoutHeader from '@/components/LayoutHeader.vue'
+import EnrollmentsListView from '@/components/ListViews/EnrollmentsListView.vue'
+import EmptyState from '@/components/ListViews/EmptyState.vue'
+import ViewControls from '@/components/ViewControls.vue'
 import LucideCalendarClock from '~icons/lucide/calendar-clock'
-import { Button, call, toast, createResource } from 'frappe-ui'
-import { ref } from 'vue'
+import { formatDate, timeAgo } from '@/utils'
+import { ref, computed } from 'vue'
 
-const busy = ref('')
-const due = createResource({
-  url: 'easicloud_crm.cadence.get_followups_due',
-  auto: true,
-})
-function act(action, lead) {
-  busy.value = lead
-  call('easicloud_crm.cadence.' + action, { leads: JSON.stringify([lead]) })
-    .then(() => {
-      toast.success(__('Done'))
-      due.reload()
+const enrollmentsListView = ref(null)
+
+// enrollment data is loaded in the ViewControls component
+const enrollments = ref({})
+const loadMore = ref(1)
+const triggerResize = ref(1)
+const updatedPageCount = ref(20)
+const viewControls = ref(null)
+
+function parseRows(list) {
+  return list.map((enrollment) => {
+    let _rows = {}
+    enrollments.value?.data.rows.forEach((row) => {
+      _rows[row] = enrollment[row]
+      if (['modified', 'creation'].includes(row)) {
+        _rows[row] = {
+          label: formatDate(enrollment[row]),
+          timeAgo: __(timeAgo(enrollment[row])),
+        }
+      } else if (row === 'next_send_on' && enrollment[row]) {
+        _rows[row] = formatDate(enrollment[row], '', true, false)
+      }
     })
-    .catch((e) => toast.error(e.messages?.[0] || __('Action failed')))
-    .finally(() => {
-      busy.value = ''
-    })
+    return _rows
+  })
 }
+
+function getGroupedByRows(listRows, groupByField) {
+  let groupedRows = []
+  groupByField.options?.forEach((option) => {
+    let filteredRows = option
+      ? listRows.filter((row) => row[groupByField.fieldname] == option)
+      : listRows.filter((row) => !row[groupByField.fieldname])
+    groupedRows.push({
+      label: groupByField.label,
+      group: option || __(' '),
+      collapsed: false,
+      rows: parseRows(filteredRows),
+    })
+  })
+  return groupedRows
+}
+
+const rows = computed(() => {
+  const d = enrollments.value?.data
+  if (!d?.data) return []
+  if (d.view_type === 'group_by') {
+    if (!d.group_by_field?.fieldname) return []
+    return getGroupedByRows(d.data, d.group_by_field)
+  }
+  if (!['list', 'group_by'].includes(d.view_type)) return []
+  return parseRows(d.data)
+})
+
+const columns = computed(() => {
+  let _columns = enrollments.value?.data?.columns || []
+  if (_columns.length) {
+    _columns = _columns.map((col, index) => {
+      if (index === _columns.length - 1) {
+        return { ...col, align: 'right' }
+      }
+      return col
+    })
+  }
+  return _columns
+})
 </script>

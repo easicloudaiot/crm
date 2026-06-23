@@ -213,6 +213,20 @@ function cadenceBulk(action, selections, unselectAll) {
     .catch((e) => toast.error(e.messages?.[0] || __('Action failed')))
 }
 
+// Followups list shows enrollments; resolve each selected enrollment's lead,
+// then reuse the lead-based cadence methods.
+function enrollmentBulk(action, selections, unselectAll) {
+  const leads = (list.value?.data?.data || [])
+    .filter((r) => selections.has(r.name))
+    .map((r) => r.lead)
+  call('easicloud_crm.cadence.' + action, { leads: JSON.stringify(leads) })
+    .then(() => {
+      toast.success(__('Done'))
+      reload(unselectAll)
+    })
+    .catch((e) => toast.error(e.messages?.[0] || __('Action failed')))
+}
+
 const customBulkActions = ref([])
 const customListActions = ref([])
 
@@ -264,6 +278,21 @@ function bulkActions(selections, unselectAll) {
     actions.push({
       label: __('Resume Cadence'),
       onClick: () => cadenceBulk('resume', selections, unselectAll),
+    })
+  }
+
+  if (props.doctype === 'CRM Cadence Enrollment') {
+    actions.push({
+      label: __('Pause'),
+      onClick: () => enrollmentBulk('pause', selections, unselectAll),
+    })
+    actions.push({
+      label: __('Resume'),
+      onClick: () => enrollmentBulk('resume', selections, unselectAll),
+    })
+    actions.push({
+      label: __('Remove'),
+      onClick: () => enrollmentBulk('unenroll', selections, unselectAll),
     })
   }
 
