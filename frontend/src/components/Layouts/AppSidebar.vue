@@ -160,6 +160,7 @@ import BrushCleaningIcon from '~icons/lucide/brush-cleaning'
 import LucideLayoutDashboard from '~icons/lucide/layout-dashboard'
 import LucideMegaphone from '~icons/lucide/megaphone'
 import LucideCalendarClock from '~icons/lucide/calendar-clock'
+import LucideMailCheck from '~icons/lucide/mail-check'
 import CRMLogo from '@/components/Icons/CRMLogo.vue'
 import InviteIcon from '@/components/Icons/InviteIcon.vue'
 import ConvertIcon from '@/components/Icons/ConvertIcon.vue'
@@ -280,6 +281,11 @@ const links = [
     label: 'Follow-ups',
     icon: LucideCalendarClock,
     to: 'Followups',
+  },
+  {
+    label: 'Email Templates',
+    icon: LucideMailCheck,
+    to: 'EmailTemplates',
   },
 ]
 

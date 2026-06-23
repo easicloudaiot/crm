@@ -37,6 +37,12 @@ const routes = [
     component: () => import('@/pages/Followups.vue'),
   },
   {
+    alias: '/email-templates',
+    path: '/email-templates',
+    name: 'EmailTemplates',
+    component: () => import('@/pages/EmailTemplates.vue'),
+  },
+  {
     path: '/leads/:leadId',
     name: 'Lead',
     component: () => import(`@/pages/${handleMobileView('Lead')}.vue`),
