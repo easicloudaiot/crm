@@ -3,6 +3,7 @@
     <Draggable
       v-if="columns"
       :list="columns"
+      :disabled="true"
       item-key="column"
       :delay="isTouchScreenDevice() ? 200 : 0"
       class="flex sm:mx-2.5 mx-2 pb-3.5"

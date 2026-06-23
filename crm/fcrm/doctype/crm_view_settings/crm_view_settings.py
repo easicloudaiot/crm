@@ -184,10 +184,15 @@ def sync_default_columns(view):
 	if view.type == "kanban" and view.column_field:
 		field_meta = frappe.get_meta(doctype).get_field(view.column_field)
 		if field_meta.fieldtype == "Link":
+			_kanban_order = (
+				"position asc"
+				if frappe.get_meta(field_meta.options).get_field("position")
+				else "modified asc"
+			)
 			columns = frappe.get_all(
 				field_meta.options,
 				fields=["name"],
-				order_by="modified asc",
+				order_by=_kanban_order,
 			)
 		elif field_meta.fieldtype == "Select":
 			columns = [{"name": option} for option in field_meta.options.split("\n")]
