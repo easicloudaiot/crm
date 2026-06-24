@@ -51,7 +51,7 @@
                   </div>
                 </template>
               </Popover>
-              <div class="text-ink-gray-9">{{ column.column.name }}</div>
+              <div class="text-ink-gray-9" :title="columnGuidance(column.column.name)">{{ column.column.name }}</div>
             </div>
             <div class="flex">
               <Dropdown :options="actions(column)">
@@ -179,6 +179,7 @@ import IndicatorIcon from '@/components/Icons/IndicatorIcon.vue'
 import { isTouchScreenDevice, colors, parseColor } from '@/utils'
 import Draggable from 'vuedraggable'
 import { Dropdown, Popover } from 'frappe-ui'
+import { statusesStore } from '@/stores/statuses'
 import { computed } from 'vue'
 
 defineProps({
@@ -195,6 +196,11 @@ defineProps({
 const emit = defineEmits(['update', 'loadMore'])
 
 const kanban = defineModel({ type: Object })
+
+const { getDealStatus } = statusesStore()
+function columnGuidance(name) {
+  return getDealStatus(name)?.stage_guidance || ''
+}
 
 const titleField = computed(() => {
   return kanban.value?.data?.title_field
